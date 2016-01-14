@@ -27,20 +27,30 @@ import java.net.URL;
  * Created by qtfreet on 2016/1/5.
  */
 public class CheckUpdate {
-    private Context mcontext;
 
-    public CheckUpdate(Context context) {
-        this.mcontext = context;
+
+    private CheckUpdate() {
+    }
+
+    private Context mcontext;
+    private static CheckUpdate checkUpdate = null;
+
+    public static CheckUpdate getInstance() {
+        if (checkUpdate == null) {
+            checkUpdate = new CheckUpdate();
+        }
+        return checkUpdate;
     }
 
 
-    public void startCheck() {
+    public void startCheck(Context context) {
+        mcontext = context;
         new Thread(new Runnable() {
             @Override
             public void run() {
 
                 URL url;
-                InputStream is;
+                InputStream is = null;
                 HttpURLConnection conn = null;
                 try {
                     url = new URL(Constant.APK_URL);
@@ -57,12 +67,10 @@ public class CheckUpdate {
                     LogUtils.e(sb);
                     br.close();
                     is.close();
-                    Message msg = new Message();
-                    msg.what = 0;
-                    msg.obj = sb.toString();
-                    mhandler.sendMessage(msg);
-
-
+                    Message message = new Message();
+                    message.what = 0;
+                    message.obj = sb.toString();
+                    mhanler.sendMessage(message);
                 } catch (MalformedURLException e) {
                     e.printStackTrace();
                 } catch (IOException e) {
@@ -76,23 +84,23 @@ public class CheckUpdate {
         }).start();
     }
 
-    private Handler mhandler = new Handler() {
+    private Handler mhanler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
             switch (msg.what) {
                 case 0:
+                    JSONObject js = null;
                     try {
-                        JSONObject js = new JSONObject(msg.obj.toString());
+                        js = new JSONObject(msg.obj.toString());
                         int version = js.getInt("version");
                         String intro = js.getString("introduction");
-                        String url = js.getString("url");
-                        compareVersion(version, intro, url);
+                        String apkurl = js.getString("url");
+                        compareVersion(version, intro, apkurl);
+                        LogUtils.e(apkurl);
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
-
-
                     break;
             }
         }
@@ -114,23 +122,17 @@ public class CheckUpdate {
                     Intent intent = new Intent(mcontext, DownloadService.class);
                     intent.putExtra("url", url);
                     mcontext.startService(intent);
-
-
                 }
             })
                     .show();
-
         } else {
             return;
         }
-
-
     }
 
 
     private int getVerCode(Context ctx) {
         int currentVersionCode = 0;
-
         PackageManager manager = ctx.getPackageManager();
         try {
             PackageInfo info = manager.getPackageInfo(ctx.getPackageName(), 0);

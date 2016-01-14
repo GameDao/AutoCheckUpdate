@@ -1,7 +1,6 @@
 package com.qtfreet.checkupdate;
 
 import android.app.IntentService;
-import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
@@ -98,18 +97,11 @@ public class DownloadService extends IntentService {
             }
             // 下载完成
             mBuilder.setContentText(getString(R.string.download_success)).setProgress(0, 0, false);
-
+            mNotifyManager.cancelAll();
             Intent installAPKIntent = new Intent(Intent.ACTION_VIEW);
-            //如果没有设置SDCard写权限，或者没有sdcard,apk文件保存在内存中，需要授予权限才能安装
-            String[] command = {"chmod", "777", apkFile.toString()};
-            ProcessBuilder builder = new ProcessBuilder(command);
-            builder.start();
             installAPKIntent.setDataAndType(Uri.fromFile(apkFile), "application/vnd.android.package-archive");
-            PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, installAPKIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-            mBuilder.setContentIntent(pendingIntent);
-            Notification noti = mBuilder.build();
-            noti.flags = android.app.Notification.FLAG_AUTO_CANCEL;
-            mNotifyManager.notify(0, noti);
+            installAPKIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(installAPKIntent);
 
         } catch (Exception e) {
             Log.e(TAG, "download apk file error", e);
@@ -133,9 +125,9 @@ public class DownloadService extends IntentService {
 
     private void updateProgress(int progress, boolean i) {
 
-        if(i==false){
+        if (i == false) {
             mBuilder.setContentText(this.getString(R.string.download_progress, progress)).setProgress(100, progress, i);
-        }else {
+        } else {
             mBuilder.setContentText("正在下载:未知大小").setProgress(100, progress, i);
         }
 
