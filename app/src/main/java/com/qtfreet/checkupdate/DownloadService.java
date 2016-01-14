@@ -30,7 +30,6 @@ public class DownloadService extends IntentService {
 
     public DownloadService() {
         super("DownloadService");
-        LogUtils.e("已经启动了");
     }
 
     @Override
@@ -50,7 +49,6 @@ public class DownloadService extends IntentService {
         try {
             URL url = new URL(urlStr);
             HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
-
             urlConnection.setRequestMethod("GET");
             urlConnection.setDoOutput(false);
             urlConnection.setConnectTimeout(10 * 1000);
@@ -58,15 +56,12 @@ public class DownloadService extends IntentService {
             urlConnection.setRequestProperty("Connection", "Keep-Alive");
             urlConnection.setRequestProperty("Charset", "UTF-8");
             urlConnection.setRequestProperty("Accept-Encoding", "gzip, deflate");
-
             urlConnection.connect();
             long bytetotal = 0;
             if (urlConnection.getResponseCode() == 200) {
                 bytetotal = urlConnection.getContentLength();
             }
-
             LogUtils.e(bytetotal);
-
             int bytesum = 0;
             int byteread = 0;
             in = urlConnection.getInputStream();
@@ -98,10 +93,13 @@ public class DownloadService extends IntentService {
             // 下载完成
             mBuilder.setContentText(getString(R.string.download_success)).setProgress(0, 0, false);
             mNotifyManager.cancelAll();
+            //直接清除通知栏状态
             Intent installAPKIntent = new Intent(Intent.ACTION_VIEW);
             installAPKIntent.setDataAndType(Uri.fromFile(apkFile), "application/vnd.android.package-archive");
             installAPKIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(installAPKIntent);
+
+            //下载完成后直接弹出安装界面
 
         } catch (Exception e) {
             Log.e(TAG, "download apk file error", e);
@@ -126,6 +124,7 @@ public class DownloadService extends IntentService {
     private void updateProgress(int progress, boolean i) {
 
         if (i == false) {
+            //如果获取不到文件大小，则不使用百分比进度条
             mBuilder.setContentText(this.getString(R.string.download_progress, progress)).setProgress(100, progress, i);
         } else {
             mBuilder.setContentText("正在下载:未知大小").setProgress(100, progress, i);
